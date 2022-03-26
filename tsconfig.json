@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "target": "es2016",
+        "experimentalDecorators": true,
+        "module": "commonjs",
+        "baseUrl": ".",
+        "paths": {
+            "@lib/*": ["src/*"]
+        },
+        "allowJs": false,
+        "sourceMap": true,
+        "outDir": "./dist",
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "noImplicitThis": true,
+        "useUnknownInCatchVariables": true,
+        "alwaysStrict": true,
+        "noImplicitReturns": true,
+        "noUncheckedIndexedAccess": true,
+        "noImplicitOverride": true,
+        "skipLibCheck": true
+    },
+    "exclude": ["**/#generated"]
+}
