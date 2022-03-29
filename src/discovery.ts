@@ -18,7 +18,7 @@ export class ApiDiscovery {
      */
     getAll(): IApiConfig[] {
         //@
-        const paths = glob.sync("../endpoints/**/*.js", { cwd: __dirname }).sort();
+        const paths = glob.sync(process.env.API_PATH as string, { cwd: __dirname }).sort();
         const endpoints: Record<string, IApiConfig> = {};
         for (const path of paths) {
             const api = require(path).default;

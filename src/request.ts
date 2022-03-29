@@ -8,7 +8,7 @@ import { DatabaseError } from "sequelize";
 
 type IO = ShapeBase<any>;
 
-interface RequestConfig {
+export interface RequestConfig {
     payload: any;
     context: UserContext;
 }
@@ -85,7 +85,7 @@ abstract class HandlerBase {
         // this.conf.response.cookie(key, val, { expires: expires, httpOnly: true });
     }
 
-    private async getErrorResponse(error: any) {
+    async getErrorResponse(error: any) {
         let code = 0;
         ////////////////////////////
         if (error instanceof DatabaseError) {
@@ -117,12 +117,14 @@ export class Api {
     //@
     static base<I extends IO, O extends IO>(definition: HandlerInterface<I, O>) {
         //@
-        abstract class Augmented extends Handler<I, O> {
+        return /* abstract */ class Augmented extends Handler<I, O> {
             //@
             constructor() {
                 super();
                 this.definition = definition;
             }
+
+            handle() {}
 
             // Used for discovery
             static __definition__ = definition;
@@ -141,7 +143,7 @@ export class Api {
                 });
                 return instance.response;
             }
-        }
-        return Augmented;
+        };
+        // return Augmented;
     }
 }

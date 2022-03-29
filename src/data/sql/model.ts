@@ -25,7 +25,7 @@ export abstract class RepositoryBase<T extends SqlInterface> {
 
     abstract config: RepositoryConfig<T>;
 
-    repo = class extends Model<T> {};
+    private repo = class extends Model<T> {};
 
     build(data: T): T {
         return data;
