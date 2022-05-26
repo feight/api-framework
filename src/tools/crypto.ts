@@ -14,6 +14,11 @@ export function hashPassword(pwd: string, salt?: string): string {
     return createHash("sha1").update(value).digest("hex");
 }
 
+export function getTempPassword(email: string): string {
+    const value = "!=$poo**.@" + email;
+    return createHash("sha1").update(value).digest("hex");
+}
+
 export function verifyPassword(pwd: string): void {
     //@
     if (pwd.length < 8) {

@@ -120,9 +120,9 @@ export abstract class RepositoryBase<T extends FirestoreData> {
         //@
         const record = (await this.query(s)).pop();
 
-        if (!record) {
-            throw new error.RecordNotFound();
-        }
+        // if (!record) {
+        //     throw new error.RecordNotFound();
+        // }
 
         return record;
     }

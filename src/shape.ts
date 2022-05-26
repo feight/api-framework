@@ -1,6 +1,7 @@
 export { z } from "zod";
 import { z, ZodTypeAny, ZodError } from "zod";
 import { generateMock } from "@anatine/zod-mock";
+import { AppException } from "@lib/exception";
 
 export abstract class ShapeBase<T> {
     //@
@@ -30,9 +31,11 @@ export class Shape<T extends ZodTypeAny> extends ShapeBase<T["_output"]> {
             if (ex instanceof ZodError) {
                 const errors = [];
                 for (const err of ex.issues) {
-                    errors.push(`argument for "${err.path}": ${err.message}`.toLowerCase());
+                    errors.push(`argument for "${err.path}" is ${err.message}`.toLowerCase());
+                    console.error([errors[0], input]);
+                    break;
                 }
-                throw new Error(errors.join(",\n"));
+                throw new AppException(errors.join("; "));
             }
             throw ex;
         }
@@ -47,11 +50,17 @@ export const AnyShape = new Shape(z.any());
 
 export const io = {
     //@
-    date: ()=>z.number()
-        .transform((s) => new Date(s))
-        .refine(s => s.getFullYear() > 1990, {message:"expected unix timestamp in milliseconds"}),
+    date: () =>
+        z
+            .number()
+            .transform((s) => new Date(s))
+            .refine((s) => s.getFullYear() > 1990, {
+                message: "expected unix timestamp in milliseconds",
+            }),
 
-    number:()=>z.union([z.string(),z.number()])
-        .transform(s=> Number(s))
-        .refine(val => !isNaN(val), {message: "expected number"})
+    number: () =>
+        z
+            .union([z.string(), z.number()])
+            .transform((s) => Number(s))
+            .refine((val) => !isNaN(val), { message: "expected number" }),
 };

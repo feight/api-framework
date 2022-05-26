@@ -3,6 +3,7 @@ import { Handler, HandlerInterface } from "@lib/request";
 
 export interface IApiConfig {
     //@
+    route: string;
     meta: HandlerInterface<any, any>;
     ctor: { new (): Handler<any, any> };
 }
@@ -18,13 +19,14 @@ export class ApiDiscovery {
      */
     getAll(): IApiConfig[] {
         //@
-        const paths = glob.sync(process.env.API_PATH as string, { cwd: __dirname }).sort();
+        const libPaths = glob.sync(__dirname + "/base/endpoints/**/*.js", { cwd: __dirname });
+        const paths = glob.sync(this.opts.path, { cwd: __dirname }).concat(libPaths).sort();
         const endpoints: Record<string, IApiConfig> = {};
         for (const path of paths) {
             const api = require(path).default;
             if (api && api.__definition__) {
                 const meta = api.__definition__ as HandlerInterface<any, any>;
-                endpoints[meta.route] = { meta: meta, ctor: api };
+                endpoints[meta.route] = { meta: meta, route: `/apiv1${meta.route}`, ctor: api };
             }
         }
 
