@@ -1,16 +1,17 @@
 {
     "compilerOptions": {
+        "declaration": true,
         "target": "es2016",
-        "experimentalDecorators": true,
         "module": "commonjs",
+        "outDir": "dist",
         "baseUrl": ".",
         "paths": {
             "@lib/*": ["src/*"]
         },
         "allowJs": false,
         "sourceMap": true,
-        "outDir": "./dist",
         "esModuleInterop": true,
+        "experimentalDecorators": false,
         "forceConsistentCasingInFileNames": true,
         "strict": true,
         "noImplicitThis": true,
@@ -21,5 +22,6 @@
         "noImplicitOverride": true,
         "skipLibCheck": true
     },
+    "include": ["src"],
     "exclude": ["**/#generated"]
 }
