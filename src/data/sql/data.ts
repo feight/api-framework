@@ -1,16 +1,21 @@
 import { Sequelize, Transaction } from "sequelize";
 
-const sequelize = new Sequelize("mysql://root:cosmos@mysql:3306/newsteam?charset=utf8mb4", {
-    logging: false,
-});
+let sequelize: Sequelize;
 
 export class DataAccess {
     namespace?: string;
     connection: Sequelize;
     __transaction?: Transaction;
+    connectionString: string;
 
-    constructor(namespace?: string) {
+    constructor(namespace?: string, connectionString?: string) {
         this.namespace = namespace;
+        this.connectionString = connectionString ?? "";
+
+        if (!sequelize) {
+            sequelize = new Sequelize(this.connectionString, { logging: false });
+        }
+
         this.connection = sequelize;
     }
 

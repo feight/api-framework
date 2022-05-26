@@ -69,6 +69,16 @@ export abstract class RepositoryBase<T extends SqlInterface> {
         return instance ? this.parseData(instance.toJSON()) : null;
     }
 
+    protected async findAll(options: FindOptions<T>): Promise<T[]> {
+        //@
+        const instances = await this.repo.findAll({
+            ...options,
+            transaction: await this.da.transaction,
+        });
+
+        return instances.map((instance) => this.parseData(instance.toJSON()));
+    }
+
     /**
      * Initializes a Sequelize model.
      */
