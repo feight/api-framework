@@ -1,35 +1,83 @@
-import { DataAccess as FirestoreData } from "@lib/data/firestore/data";
-import { DataAccess as SqlData } from "@lib/data/sql/data";
-// import { RequestTokenRepository } from "data/auth/request-token";
-// import { OrganizationRepository } from "data/auth/organization";
-// import { AccessTokenRepository } from "data/auth/access-token";
-// import { NamespaceRepository } from "data/auth/namespace";
-// import { ConsumerRepository } from "data/auth/consumer";
-// import { UserRepository } from "data/auth/user";
+import { Middleware } from "@lib/service";
+import { UserContext } from "@lib/context";
+import { AppException } from "@lib/exception";
+import { UserService } from "@lib/services/user";
 
-export class AuthServiceBus {
+/**
+ * This service will perform user authentication on each request
+ */
+export class AuthenticationService extends Middleware {
     //@
-    // organization = new OrganizationRepository(this.da).initialize();
-    // namespace = new NamespaceRepository(this.da).initialize();
-    // consumer = new ConsumerRepository(this.da).initialize();
-    // user = new UserRepository(this.da).initialize();
-
-    // tokens = {
-    //     request: new RequestTokenRepository(this.fs),
-    //     access: new AccessTokenRepository(this.fs),
-    // };
-
-    constructor(protected da: SqlData, protected fs: FirestoreData) {
-        this.configureAssociations();
+    constructor(public userService: UserService) {
+        super();
     }
 
-    protected configureAssociations() {
-        // this.namespace.repo.belongsTo(this.organization.repo);
-        // this.consumer.repo.belongsTo(this.namespace.repo);
-        // this.user.repo.belongsTo(this.namespace.repo);
+    override async onAuthentication(context: UserContext) {
+        await this.initialize(context);
     }
 
-    async syncTables() {
-        await this.da.connection.sync();
+    async initialize(context: UserContext, useCache = true) {
+        //@
+        // const context = new UserContext({ ipAddress: "" });
+        if (!context) {
+            context = new UserContext({ ipAddress: "" });
+        }
+        let accessToken = context.access_token;
+        if (!accessToken) {
+            accessToken = ""; //this.getAccessToken();
+        }
+        if (accessToken) {
+            if (useCache) {
+                var cached = undefined; // memcache.get(_AUTH_CACHE_KEY_PREFIX + access_token)
+                if (cached) {
+                    return new UserContext({ ipAddress: "" });
+                }
+            }
+            try {
+                await this.authenticate(context);
+                // context.update_cache()
+            } catch (ex) {
+                if (ex instanceof AppException) {
+                    if (ex.statusCode == 401) {
+                        // webapp2.WSGIApplication.request.response.delete_cookie(_AUTH_COOKIE_NAME)
+                        console.log("401: " + context.access_token);
+                    } else {
+                        throw ex;
+                    }
+                }
+            }
+        }
+
+        return context;
     }
+
+    async authenticate(context: UserContext) {
+        //@
+        //     response = self.call('user/me', access_token=access_token)
+
+        const response = await this.userService.me(context.access_token!);
+
+        context.is_guest = false;
+        context.access_token = context.access_token;
+        context.user = response;
+        context.devices = undefined;
+        context.enforce_device_limit = response.enforce_device_limit;
+    }
+
+    onAuthorization(action: string) {
+        return true;
+    }
+
+    hasPermission(action: string) {
+        return true;
+    }
+
+    getCurrentUser() {}
+
+    login() {
+        // create request token
+        // create access token
+    }
+
+    logout() {}
 }
