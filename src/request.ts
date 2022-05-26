@@ -1,16 +1,26 @@
 import { ShapeBase } from "@lib/shape";
-import { ServiceBus } from "@lib/services";
 import { UserContext } from "@lib/context";
 import { AppException } from "@lib/exception";
-// import ErrorShape from "shapes/endpoints/v1/error/error";
+import ErrorShape from "@lib/base/shapes/error/error";
 
-import { DatabaseError } from "sequelize";
+export type IO = ShapeBase<any>;
 
-type IO = ShapeBase<any>;
-
-export interface RequestConfig {
+export abstract class RequestContext {
+    ipAddress: string;
+    hostName: string;
     payload: any;
     context: UserContext;
+
+    constructor(args: { ipAddress: string; hostName: string; payload: any; context: UserContext }) {
+        this.ipAddress = args.ipAddress;
+        this.hostName = args.hostName;
+        this.payload = args.payload;
+        this.context = args.context;
+    }
+
+    abstract status(code: number): void;
+
+    abstract setCookie(name: string, value: string): void;
 }
 
 export interface HandlerInterface<I extends IO, O extends IO> {
@@ -25,34 +35,53 @@ export interface HandlerInterface<I extends IO, O extends IO> {
     };
 }
 
-const _AUTH_COOKIE_NAME = "_cosmos_auth";
-
 abstract class HandlerBase {
     //@
     abstract definition: HandlerInterface<any, any>;
 
     response: any;
     context!: UserContext;
-    config!: RequestConfig;
-    services = new ServiceBus();
+    request!: RequestContext;
     args!: this["definition"]["input"]["data"];
     result!: this["definition"]["output"]["data"];
 
-    abstract handle(): void;
+    abstract handle(): Promise<void>;
 
     async dispose() {}
+    async onSuccess() {}
+    async onException(error: any) {}
+    async onAuthentication(context: UserContext) {}
 
-    async run(config: RequestConfig) {
+    async run(request: RequestContext) {
         //@
-        this.config = config;
-        if (config.context) {
-            this.context = config.context;
-        }
+        this.request = request;
 
+        /////////////////////
+
+        this.context = this.request.context;
+
+        // this.context = new UserContext({ ipAddress: "::", accessToken: "12345" });
+
+        await this.onAuthentication(this.context);
+
+        // self.validate_module()
+        // self.authorize()
+        // self.before_run()  # TODO: make this before_handle rather
+        // self.params = self._get_arguments()
+        // self.origin = self.context.origin
+
+        // # delegate to another service if needed
+        // # ...
+        // module_reroute = None
+        // module_path = self.__module__ + '.' + self.__class__.__name__
+
+        ////////////////////
+
+        // this.context = request.context;
         //
         try {
             // run
-            this.args = this.definition.input.parse(config.payload);
+            this.args = this.definition.input.parse(request.payload);
 
             await this.handle();
 
@@ -64,11 +93,13 @@ abstract class HandlerBase {
             }
 
             //
-            await this.services.da.commit();
+            await this.onSuccess();
             //
         } catch (error: any) {
-            await this.services.da.rollback();
+            await this.onException(error);
             //
+            this.request.status(500);
+
             this.response = await this.getErrorResponse(error);
             //
         } finally {
@@ -81,30 +112,14 @@ abstract class HandlerBase {
         return { success: message ?? true };
     }
 
-    setCookie(key: string, val: string, expires: Date) {
-        // this.conf.response.cookie(key, val, { expires: expires, httpOnly: true });
-    }
-
     async getErrorResponse(error: any) {
         let code = 0;
-        ////////////////////////////
-        if (error instanceof DatabaseError) {
-            // 1146 - ER_NO_SUCH_TABLE
-            if ((error.parent as any).errno === 1146) {
-                await this.services.auth.syncTables();
-                // return ErrorShape.build({
-                //     code: 1146,
-                //     message: "Some SQL tables do not exist, creating...",
-                // });
-            }
-        }
-        ////////////////////////////
         if (error instanceof AppException) {
             code = error.code;
         } else {
             console.error(error);
         }
-        // return ErrorShape.build({ code: code, message: error.message });
+        return ErrorShape.build({ code: code, error: error.message });
     }
 }
 
@@ -124,7 +139,7 @@ export class Api {
                 this.definition = definition;
             }
 
-            handle() {}
+            async handle() {}
 
             // Used for discovery
             static __definition__ = definition;
@@ -134,13 +149,14 @@ export class Api {
              * TODO: Instead of this, we could create a "factory" instance inside
              *       static prop here to handle this stuff.
              */
-            static async spwan(this: { new (): Augmented }, input: I["data"]): Promise<O["data"]> {
+            static async spwan(
+                this: { new (): Augmented },
+                req: RequestContext,
+                input: I["data"]
+            ): Promise<O["data"]> {
                 //@
                 const instance = new this();
-                await instance.run({
-                    payload: input,
-                    context: new UserContext({ ipAddress: "poo" }),
-                });
+                await instance.run(req);
                 return instance.response;
             }
         };
