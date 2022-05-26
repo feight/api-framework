@@ -1,15 +1,21 @@
 {
-    "name": "@newsteam/api-framework",
-    "version": "1.0.0",
+    "name": "@dgroux/api-framework",
+    "version": "1.0.1-24",
+    "files": [
+        "dist",
+        "src/base/pages"
+    ],
     "scripts": {
-        "clean": "rm -rf dist",
-        "build": "npm run clean && tsc"
+        "build": "make build",
+        "local": "make local",
+        "push": "make push"
     },
     "dependencies": {
         "@anatine/zod-mock": "^1.2.0",
         "@anatine/zod-openapi": "^1.1.1",
         "@google-cloud/debug-agent": "^5.2.8",
         "body-parser": "^1.19.0",
+        "cookie-parser": "^1.4.6",
         "cross-env": "^7.0.3",
         "dotenv": "^10.0.0",
         "express": "^4.17.1",
@@ -27,6 +33,7 @@
     },
     "devDependencies": {
         "@types/body-parser": "^1.19.2",
+        "@types/cookie-parser": "^1.4.3",
         "@types/express": "^4.17.13",
         "@types/glob": "^7.2.0",
         "@types/node": "^17.0.23",
