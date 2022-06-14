@@ -1,6 +1,6 @@
 // https://sequelize.org/v7/manual/model-instances.html
 
-import { DataTypes, ModelAttributeColumnOptions, FindOptions, Model } from "sequelize";
+import { DataTypes, ModelAttributes, FindOptions, Model } from "sequelize";
 import { DataAccess } from "@lib/data/sql/data";
 import { ShapeBase } from "@lib/shape";
 
@@ -8,7 +8,7 @@ interface RepositoryConfig<T> {
     name: string;
     shape: ShapeBase<T>;
     useNamespace?: boolean;
-    schema: Record<keyof T, ModelAttributeColumnOptions>;
+    schema: ModelAttributes<Model<T>>;
 }
 
 interface SqlInterface {
@@ -31,16 +31,18 @@ export abstract class RepositoryBase<T extends SqlInterface> {
         return data;
     }
 
-    async create(data: T): Promise<T> {
+    async create(data: Partial<T>): Promise<T> {
         //@
-        const instance = this.repo.build({ ...data, namespaceId: this.da.namespace });
+        const model = this.validate(data);
+
+        const instance = this.repo.build({ ...model, namespaceId: this.da.namespace });
 
         await instance.save({ transaction: await this.da.transaction });
 
         return this.parseData(instance.toJSON());
     }
 
-    async update(data: T) {
+    async update(data: Partial<T>) {
         //@
         await this.repo.update(
             { ...data, namespaceId: this.da.namespace },
@@ -103,6 +105,10 @@ export abstract class RepositoryBase<T extends SqlInterface> {
         });
 
         return this;
+    }
+
+    protected validate(data: any) {
+        return this.config.shape.parse(data);
     }
 
     /**

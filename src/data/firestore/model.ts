@@ -37,13 +37,17 @@ export abstract class RepositoryBase<T extends FirestoreData> {
     /**
      * Creates a record
      */
-    async create(data: T): Promise<T> {
+    async create(data: Partial<T>): Promise<T> {
         //@
+        const model = this.validate(data);
+
         const ref = this.getCollection().doc(uuidv4());
 
-        await ref.set({ ...data, namespace: this.da.namespace });
+        await ref.set({ ...model, namespace: this.da.namespace });
 
-        return data;
+        model.key = ref.id;
+
+        return model;
     }
 
     /**
@@ -134,6 +138,10 @@ export abstract class RepositoryBase<T extends FirestoreData> {
         for (const doc of snapshot.docs) {
             await doc.ref.delete();
         }
+    }
+
+    protected validate(data: any) {
+        return this.config.shape.parse(data);
     }
 
     /**
