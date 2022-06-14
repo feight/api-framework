@@ -7,15 +7,15 @@ export class ApiDocumentation {
     paths: Array<string>;
 
     constructor() {
-        this.paths = glob.sync("src/docs/**/*.md", { cwd: process.cwd() });
+        this.paths = glob.sync("src/v1/docs/**/*.md", { cwd: process.cwd() });
     }
 
     getOverview() {
-        return this.get("src/docs/overview.md");
+        return this.get("src/v1/docs/overview.md");
     }
 
     getEndpoint(apiPath: string) {
-        return this.get(path.join("src/docs/endpoints", apiPath + ".md"));
+        return this.get(path.join("src/v1/docs/endpoints", apiPath + ".md"));
     }
 
     get(docPath: string) {

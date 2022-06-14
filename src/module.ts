@@ -2,40 +2,25 @@ import { AnyShape } from "@lib/shape";
 import { UserContext } from "@lib/context";
 import { MySqlService } from "@lib/services/sql";
 import { Service, Middleware } from "@lib/service";
-import { ExpressServer } from "@lib/servers/express";
 import { HandlerInterface, IO, Api } from "@lib/request";
-import { SettableHostConfig, HostConfig } from "@lib/config";
 
 type Services = {
     [key: string]: Service;
 };
 
-export class HostBuilder<T extends Services> {
+export class ModuleBuilder<T extends Services> {
     //@
-    config = new HostConfig({
-        port: 8000,
-        name: "Untitled",
-        endpointPath: "",
-    });
-
     services: Record<string, (services: T) => Service> = {};
 
     static create() {
         return new this();
     }
 
-    addConfig(config: SettableHostConfig) {
-        //@
-        this.config = new HostConfig(config);
-
-        return this;
-    }
-
     addService<Name extends string, S extends Service>(key: Name, build: (services: T) => S) {
         //@
         this.services[key] = build;
 
-        return this as unknown as HostBuilder<T & { [K in Name]: S }>;
+        return this as unknown as ModuleBuilder<T & { [K in Name]: S }>;
     }
 
     addMiddleware<M extends Middleware>(key: string, build: (services: T) => M) {
@@ -53,7 +38,7 @@ export class HostBuilder<T extends Services> {
         }, {} as T);
     }
 
-    request<I extends IO, O extends IO>(definition: HandlerInterface<I, O>) {
+    api<I extends IO, O extends IO>(definition: HandlerInterface<I, O>) {
         //@
         const host = this;
 
@@ -82,25 +67,15 @@ export class HostBuilder<T extends Services> {
             }
         };
     }
-
-    start() {
-        return new ExpressServer(this.config).start();
-    }
 }
 
 ////////////////////////////////////////////////////////////
 
-const host = HostBuilder.create()
-    .addConfig({
-        port: 8000,
-        name: "Hello World",
-        endpointPath: "",
-    })
-    .addService("sql", () => {
-        return new MySqlService();
-    });
+const host = ModuleBuilder.create().addService("sql", () => {
+    return new MySqlService();
+});
 
-export default class extends host.request({
+export default class extends host.api({
     //@
     route: "/basic",
     permission: "public",
