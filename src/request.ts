@@ -98,7 +98,11 @@ abstract class HandlerBase {
         } catch (error: any) {
             await this.onException(error);
             //
-            this.request.status(500);
+            if (error instanceof AppException) {
+                this.request.status(error.statusCode);
+            } else {
+                this.request.status(500);
+            }
 
             this.response = await this.getErrorResponse(error);
             //
