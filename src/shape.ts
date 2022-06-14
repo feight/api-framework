@@ -1,4 +1,5 @@
 export { z } from "zod";
+import { logger } from "@lib/logger";
 import { z, ZodTypeAny, ZodError } from "zod";
 import { generateMock } from "@anatine/zod-mock";
 import { AppException } from "@lib/exception";
@@ -32,7 +33,7 @@ export class Shape<T extends ZodTypeAny> extends ShapeBase<T["_output"]> {
                 const errors = [];
                 for (const err of ex.issues) {
                     errors.push(`argument for "${err.path}" is ${err.message}`.toLowerCase());
-                    console.error([errors[0], input]);
+                    logger.debug(`${errors[0]}. Input args:`, input);
                     break;
                 }
                 throw new AppException(errors.join("; "));
