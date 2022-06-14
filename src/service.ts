@@ -6,6 +6,10 @@ export abstract class Service {
     async dispose() {}
     async onSuccess() {}
     async onException(error: any) {}
+
+    initialize(context: UserContext) {
+        this.context = context;
+    }
 }
 
 export abstract class Middleware extends Service {

@@ -16,7 +16,7 @@ export class AuthenticationService extends Middleware {
         await this.initialize(context);
     }
 
-    async initialize(context: UserContext, useCache = true) {
+    override async initialize(context: UserContext, useCache = true) {
         //@
         // const context = new UserContext({ ipAddress: "" });
         if (!context) {
